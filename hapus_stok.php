@@ -1,0 +1,179 @@
+<!-- PHP Script -->
+<?php
+
+    // ambil id aset di url
+    $idAset = $_GET["id"];
+    // ambil data aset pada tabel aset masuk sesuai id aset yang dikirim(utk data hapus stok)
+    $ambilAset = $conn->query("SELECT * FROM tbl_aset_masuk WHERE id_aset_masuk = '$idAset' ");
+    $pecahAset = $ambilAset->fetch_assoc();
+
+?>
+
+<!-- Main Content -->
+<div id="content">
+
+    <!-- Topbar -->
+    <?php require "components/navbar.php"; ?>
+    <!-- End Topbar -->
+
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Hapus Stok</h1>
+        </div>
+
+        <!-- Content Row & ajax page (edit aset) -->
+        <div class="row" id="edit-page">
+
+            <!-- Area Chart -->
+            <div class="col-md-12">
+                <div class="card shadow mb-4">
+                    <!-- Card Header - Dropdown -->
+                    <div
+                        class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Verifikasi Data</h6>
+                    </div>
+                    <!-- Card Body -->
+                    <div class="card-body">
+
+                      <form method="post">
+                        <div class="form-row mt-3">
+                          <div class="form-group col-md-4">
+                            <label for="kode-inventaris">Kode Inventaris</label>
+                            <input type="text" class="form-control" id="kode-inventaris" value="<?=$pecahAset['kode_inventaris']; ?>" disabled>
+                          </div>
+                          <div class="form-group col-md-4">
+                            <label for="nama">Nama</label>
+                            <input type="text" class="form-control" id="nama" value="<?=$pecahAset['nama_aset']; ?>" disabled>
+                          </div>
+                          <div class="form-group col-md-4">
+                            <label for="merek">Merek</label>
+                            <input type="text" class="form-control" id="merek" value="<?=$pecahAset['merek_aset']; ?>" disabled>
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group col-md-4">
+                            <label for="seri">Seri</label>
+                            <input type="text" class="form-control" id="seri" value="<?=$pecahAset['seri_aset']; ?>" disabled>
+                          </div>
+                          <div class="form-group col-md-4">
+                            <label for="jumlah">Jumlah</label>
+                            <input type="number" class="form-control" id="jumlah" name="jumlah_hapus_stok" required>
+                          </div>
+                          <div class="form-group col-md-4">
+                              <label for="keterangan">Keterangan</label>
+                              <textarea class="form-control" id="keterangan" rows="3" placeholder="Ketikkan keterangan disini" name="keterangan_hapus_stok" required></textarea>
+                          </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger" name="btn_hapus">Hapus Permanen ?</button>
+                        <!-- <button type="submit" class="btn btn-danger" name="btn_hapus" onclick="return Swal.fire({icon: 'warning', title: 'Yakin hapus stok ini?', showCancelButton: true, confirmButtonText: 'OK'})">Hapus Permanen</button> -->
+                        <a href="index.php?halaman=penghapusan" class="btn btn-light">Batal</a>
+                      </form>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <!-- /.container-fluid -->
+
+</div>
+<!-- End of Main Content -->
+
+<!-- Modals -->
+<?php require "components/modals.php"; ?>
+<!-- End Modals -->
+
+<!-- PHP Script -->
+<?php
+
+    // jika tombol simpan ditekan
+    if(isset($_POST["btn_hapus"])) {
+        
+        // ambil semua data aset yang akan dihapus dan data pada form hapus aset
+        $kodeInventaris  = $pecahAset["kode_inventaris"];
+        $namaAset        = $pecahAset["nama_aset"];
+        $merekAset       = $pecahAset["merek_aset"];
+        $seriAset        = $pecahAset["seri_aset"];
+        $jmlHapusStok    = htmlspecialchars($_POST["jumlah_hapus_stok"]);
+        $hargaSatuanAset = $pecahAset["harga_satuan_aset"];
+        $kondisiAset     = $pecahAset["kondisi_aset"];
+        $sumberAset      = $pecahAset["sumber_aset"];
+        $tglMasukAset    = $pecahAset["tanggal_masuk_aset"];
+        $keteranganAset  = $pecahAset["keterangan_aset"];
+        $gambarAset      = $pecahAset["gambar_aset"];
+        $tglHapusStok    = date("Y-m-d");
+        $ketHapusStok    = htmlspecialchars($_POST["keterangan_hapus_stok"]);
+
+        // cek jika jumlah stok yg diinputkan utk dihapus lebih besar dari stok utama
+        if($jmlHapusStok < 1 || $jmlHapusStok > $pecahAset["jumlah_aset"]) {
+
+          // tampilkan pesan gagal
+          // echo "<script>alert('Data gagal terhapus. Cek kembali jumlah stok yang anda inputkan!')</script>";
+          echo "<script>
+
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Data gagal terhapus',
+                  text: 'Gagal menghapus. Periksa jumlah stok yang anda inputkan!',
+                  showConfirmButton: true
+              })
+
+          </script>";
+
+          exit();
+          
+        }
+        else {
+
+          // masukkan semua data aset yg akan dihapus kedalam tabel hapus aset
+          $statusInsert = $conn->query("INSERT INTO tbl_hapus_stok (kode_inventaris, nama_aset, merek_aset, seri_aset, jumlah_stok, harga_satuan_aset, kondisi_aset, sumber_aset, tanggal_masuk_aset, keterangan_aset, gambar_aset, tanggal_hapus_stok, keterangan_hapus_stok) VALUES ('$kodeInventaris', '$namaAset', '$merekAset', '$seriAset', '$jmlHapusStok', '$hargaSatuanAset', '$kondisiAset', '$sumberAset', '$tglMasukAset', '$keteranganAset', '$gambarAset', '$tglHapusStok', '$ketHapusStok') ");
+
+          // cek status apakah data berhasil di input pada tabel hapus aset/tidak
+          if($statusInsert == 1) {
+            // update jumlah aset/stok pada tabel aset masuk
+            $updateJmlStok = $pecahAset["jumlah_aset"] - $jmlHapusStok;
+            $conn->query("UPDATE tbl_aset_masuk SET jumlah_aset = '$updateJmlStok' WHERE id_aset_masuk = '$idAset' ");
+            // tampilkan pesan berhasil & alihkan ke halaman penghapusan
+            // echo "<script>alert('Data terhapus.')</script>";
+            // echo "<script>location ='index.php?halaman=penghapusan';</script>";
+            echo "<script>
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Data terhapus',
+                    showConfirmButton: true
+                }).then(() => {
+                    document.location.href = 'index.php?halaman=penghapusan';
+                })
+
+            </script>";
+
+            exit();
+          }
+          else {
+            // tampilkan pesan gagal
+            // echo "<script>alert('Data gagal terhapus.')</script>";
+            echo "<script>
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Data gagal terhapus',
+                    showConfirmButton: true
+                })
+
+            </script>";
+            
+            exit();
+          }
+
+        }
+
+    }
+
+?>
